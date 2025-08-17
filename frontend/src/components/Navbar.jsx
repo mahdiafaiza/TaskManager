@@ -11,12 +11,15 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-blue-600 text-white p-4 flex justify-between items-center">
-      <Link to="/" className="text-2xl font-bold">Task Manager</Link>
+    <nav className="bg-purple-600 text-white p-4 flex justify-between items-center">
+      <Link to="/" className="text-2xl font-bold">BookSwap</Link>
       <div>
         {user ? (
           <>
-            <Link to="/tasks" className="mr-4">Tasks</Link>
+            {/* ✅ Updated Books link */}
+            <Link to="/books" className="mr-4">Books</Link>
+            {/* ✅ New Requests link */}
+            <Link to="/swap-requests" className="mr-4">Requests</Link>
             <Link to="/profile" className="mr-4">Profile</Link>
             <button
               onClick={handleLogout}
