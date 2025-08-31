@@ -1,95 +1,103 @@
-// src/components/AddBookForm.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axiosInstance from '../axiosConfig';
 
-const AddBookForm = ({ onBookAdded }) => {
+const AddBookForm = ({ books, setBooks, editingBook, setEditingBook }) => {
   const { user } = useAuth();
-  const [title, setTitle] = useState('');
-  const [author, setAuthor] = useState('');
-  const [description, setDescription] = useState('');
-  const [condition, setCondition] = useState('Good');
-  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    author: '',
+    description: '',
+    condition: 'Good',
+  });
+
+  // If editing, load book data into form
+  useEffect(() => {
+    if (editingBook) {
+      setFormData({
+        title: editingBook.title,
+        author: editingBook.author,
+        description: editingBook.description,
+        condition: editingBook.condition,
+      });
+    } else {
+      setFormData({ title: '', author: '', description: '', condition: 'Good' });
+    }
+  }, [editingBook]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || !author) {
-      alert('Title and Author are required!');
-      return;
-    }
+    if (!user?.token) return alert('You must be logged in.');
 
-    setLoading(true);
     try {
-      const res = await axiosInstance.post(
-        '/api/books',
-        { title, author, description, condition },
-        { headers: { Authorization: `Bearer ${user.token}` } }
-      );
+      if (editingBook) {
+        // Update existing book
+        const response = await axiosInstance.put(
+          `/api/books/${editingBook._id}`,
+          formData,
+          { headers: { Authorization: `Bearer ${user.token}` } }
+        );
+        setBooks(books.map(b => (b._id === response.data._id ? response.data : b)));
+      } else {
+        // Add new book
+        const response = await axiosInstance.post('/api/books', formData, {
+          headers: { Authorization: `Bearer ${user.token}` },
+        });
+        setBooks([...books, response.data]);
+      }
 
-      // ✅ pass new book up to parent so it shows instantly
-      onBookAdded(res.data);
-
-      // reset form
-      setTitle('');
-      setAuthor('');
-      setDescription('');
-      setCondition('Good');
-    } catch (err) {
-      alert('Failed to add book.');
-    } finally {
-      setLoading(false);
+      // Reset form
+      setEditingBook(null);
+      setFormData({ title: '', author: '', description: '', condition: 'Good' });
+    } catch (error) {
+      alert('Failed to save book.');
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="p-4 bg-white rounded shadow-md space-y-4"
-    >
-      <h2 className="text-xl font-bold">Add a Book</h2>
+    <form onSubmit={handleSubmit} className="bg-white p-6 shadow-md rounded mb-6">
+      <h1 className="text-2xl font-bold mb-4">
+        {editingBook ? 'Edit Book' : 'Add Book'}
+      </h1>
 
       <input
         type="text"
-        placeholder="Book Title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className="w-full border p-2 rounded"
+        placeholder="Title"
+        value={formData.title}
+        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+        className="w-full mb-4 p-2 border rounded"
         required
       />
 
       <input
         type="text"
         placeholder="Author"
-        value={author}
-        onChange={(e) => setAuthor(e.target.value)}
-        className="w-full border p-2 rounded"
+        value={formData.author}
+        onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+        className="w-full mb-4 p-2 border rounded"
         required
       />
 
       <textarea
-        placeholder="Description (optional)"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        className="w-full border p-2 rounded"
+        placeholder="Description"
+        value={formData.description}
+        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+        className="w-full mb-4 p-2 border rounded"
       />
 
       <select
-        value={condition}
-        onChange={(e) => setCondition(e.target.value)}
-        className="w-full border p-2 rounded"
+        value={formData.condition}
+        onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
+        className="w-full mb-4 p-2 border rounded"
       >
-        <option>New</option>
-        <option>Good</option>
-        <option>Fair</option>
-        <option>Poor</option>
+        <option value="New">New</option>
+        <option value="Good">Good</option>
+        <option value="Fair">Fair</option>
+        <option value="Poor">Poor</option>
       </select>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:opacity-50"
-      >
-        {loading ? 'Adding...' : 'Add Book'}
+      <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded">
+        {editingBook ? 'Update Book' : 'Add Book'}
       </button>
     </form>
   );

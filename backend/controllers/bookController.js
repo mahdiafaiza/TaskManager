@@ -1,9 +1,23 @@
 const Book = require('../models/Book');
 
-// Get all available books (excluding current user's own if needed)
+// Get all available books (excluding current user's own)
 const getBooks = async (req, res) => {
   try {
-    const books = await Book.find({ available: true });
+    const query = { available: true };
+    if (req.user) {
+      query.ownerId = { $ne: req.user._id }; // exclude own books
+    }
+    const books = await Book.find(query).populate('ownerId', 'name email');
+    res.json(books);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get current user's own books
+const getMyBooks = async (req, res) => {
+  try {
+    const books = await Book.find({ ownerId: req.user._id });
     res.json(books);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -14,13 +28,17 @@ const getBooks = async (req, res) => {
 const addBook = async (req, res) => {
   const { title, author, description, condition } = req.body;
   try {
+    if (!title || !author || !condition) {
+      return res.status(400).json({ message: 'Title, author, and condition are required' });
+    }
+
     const book = await Book.create({
-      ownerId: req.user.id,
+      ownerId: req.user._id,
       title,
       author,
-      description,
+      description: description || '',
       condition,
-      available: true, // default when listed
+      available: true,
     });
     res.status(201).json(book);
   } catch (error) {
@@ -33,10 +51,10 @@ const updateBook = async (req, res) => {
   const { title, author, description, condition, available } = req.body;
   try {
     const book = await Book.findById(req.params.id);
-
     if (!book) return res.status(404).json({ message: 'Book not found' });
-    if (book.ownerId.toString() !== req.user.id)
+    if (book.ownerId.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to update this book' });
+    }
 
     book.title = title || book.title;
     book.author = author || book.author;
@@ -56,24 +74,28 @@ const deleteBook = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
     if (!book) return res.status(404).json({ message: 'Book not found' });
-    if (book.ownerId.toString() !== req.user.id)
+    if (book.ownerId.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to delete this book' });
+    }
 
-    await book.remove();
+    await Book.deleteOne({ _id: book._id });
     res.json({ message: 'Book removed from listings' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Optional: Request swap with another student
+// Temporary swap request (MVP)
 const requestSwap = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
     if (!book) return res.status(404).json({ message: 'Book not found' });
     if (!book.available) return res.status(400).json({ message: 'Book is not available for swap' });
+    if (book.ownerId.toString() === req.user._id.toString()) {
+      return res.status(400).json({ message: 'Cannot request your own book' });
+    }
 
-    // For now: mark as unavailable, in real app you'd create a SwapRequest model
+    // For MVP: mark as unavailable
     book.available = false;
     await book.save();
 
@@ -85,6 +107,7 @@ const requestSwap = async (req, res) => {
 
 module.exports = {
   getBooks,
+  getMyBooks,
   addBook,
   updateBook,
   deleteBook,

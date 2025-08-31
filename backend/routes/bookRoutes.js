@@ -1,12 +1,31 @@
 const express = require('express');
-const { addBook, getBooks } = require('../controllers/bookController');
-const { protect } = require('../middleware/authMiddleware');
 const router = express.Router();
+const {
+  getBooks,
+  getMyBooks,
+  addBook,
+  updateBook,
+  deleteBook,
+  requestSwap,
+} = require('../controllers/bookController');
+const { authMiddleware } = require('../middleware/authMiddleware');
 
-// add new book
-router.post('/', protect, addBook);
+// Get all available books (for gallery, excluding user's own)
+router.get('/all', authMiddleware, getBooks);
 
-// get all books for logged-in user
-router.get('/', protect, getBooks);
+// Get logged-in user's own books
+router.get('/mine', authMiddleware, getMyBooks);
+
+// Add a new book
+router.post('/', authMiddleware, addBook);
+
+// Update book (only owner)
+router.put('/:id', authMiddleware, updateBook);
+
+// Delete book (only owner)
+router.delete('/:id', authMiddleware, deleteBook);
+
+// Request swap for a book
+router.post('/:id/request-swap', authMiddleware, requestSwap);
 
 module.exports = router;

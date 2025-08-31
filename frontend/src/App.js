@@ -6,6 +6,7 @@ import Profile from './pages/Profile';
 import Tasks from './pages/Tasks';
 import Books from './pages/Books';           
 import SwapRequests from './pages/SwapRequests';
+import BookGallery from './pages/BookGallery';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/tasks" element={<Tasks />} />
         <Route path="/books" element={<Books />} />
+        <Route path="/bookgallery" element={<BookGallery/>} />
         <Route path="/swap-requests" element={<SwapRequests />} />
       </Routes>
     </Router>

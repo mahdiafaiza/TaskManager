@@ -17,6 +17,7 @@ const Navbar = () => {
         {user ? (
           <>
             {/* ✅ Updated Books link */}
+            <Link to="/bookgallery" className="mr-4">Gallery</Link>
             <Link to="/books" className="mr-4">Books</Link>
             {/* ✅ New Requests link */}
             <Link to="/swap-requests" className="mr-4">Requests</Link>
