@@ -11,17 +11,24 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-purple-600 text-white p-4 flex justify-between items-center">
+    <nav className="bg-purple-900 text-white p-4 flex justify-between items-center">
       <Link to="/" className="text-2xl font-bold">BookSwap</Link>
       <div>
         {user ? (
           <>
             {/* ✅ Updated Books link */}
-            <Link to="/bookgallery" className="mr-4">Gallery</Link>
+            <Link to="/" className="mr-4">Gallery</Link>
             <Link to="/books" className="mr-4">Books</Link>
             {/* ✅ New Requests link */}
-            <Link to="/swap-requests" className="mr-4">Requests</Link>
-            <Link to="/profile" className="mr-4">Profile</Link>
+      <Link to="/swap-requests/owner" className="mr-4 px-4 text-white font-semibold">
+          Swap Requests
+        </Link>
+        <Link to="/swap-requests/requester" className=" mr-4 px-4 text-white font-semibold">
+          My Swap Requests
+        </Link>
+            <Link to="/profile" className="mr-4 px-4 py-2 bg-blue-300 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition"><span>
+          {user.name}
+              </span></Link>
             <button
               onClick={handleLogout}
               className="bg-red-500 px-4 py-2 rounded hover:bg-red-700"

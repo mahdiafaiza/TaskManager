@@ -8,24 +8,22 @@ const {
   deleteBook,
   requestSwap,
 } = require('../controllers/bookController');
-const { authMiddleware } = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware'); // same style as auth routes
 
-// Get all available books (for gallery, excluding user's own)
-router.get('/all', authMiddleware, getBooks);
+// Get all available books for gallery (excluding current user's own)
+router.get('/all', protect, getBooks);
 
 // Get logged-in user's own books
-router.get('/mine', authMiddleware, getMyBooks);
+router.get('/mine', protect, getMyBooks);
 
 // Add a new book
-router.post('/', authMiddleware, addBook);
+router.post('/', protect, addBook);
 
-// Update book (only owner)
-router.put('/:id', authMiddleware, updateBook);
+// Update a book (owner only)
+router.put('/:id', protect, updateBook);
 
-// Delete book (only owner)
-router.delete('/:id', authMiddleware, deleteBook);
+// Delete a book (owner only)
+router.delete('/:id', protect, deleteBook);
 
-// Request swap for a book
-router.post('/:id/request-swap', authMiddleware, requestSwap);
 
 module.exports = router;

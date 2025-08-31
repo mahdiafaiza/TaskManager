@@ -2,134 +2,85 @@ import { useState, useEffect } from 'react';
 import axiosInstance from '../axiosConfig';
 import { useAuth } from '../context/AuthContext';
 
-const BookGallery = () => {
+const LandingPage = () => {
   const { user } = useAuth();
   const [books, setBooks] = useState([]);
-  const [userBooks, setUserBooks] = useState([]);
-  const [formData, setFormData] = useState({}); // store per-book form data
 
-  // Fetch all available books (excluding user's own)
+  // Fetch all books excluding user's own
   useEffect(() => {
-    if (!user?.token) return;
-
     const fetchBooks = async () => {
       try {
         const res = await axiosInstance.get('/api/books/all', {
-          headers: { Authorization: `Bearer ${user.token}` },
+          headers: user?.token ? { Authorization: `Bearer ${user.token}` } : {},
         });
         setBooks(res.data);
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching books:', err);
       }
     };
 
     fetchBooks();
   }, [user]);
 
-  // Fetch current user's books
-  useEffect(() => {
-    if (!user?.token) return;
-
-    const fetchMyBooks = async () => {
-      try {
-        const res = await axiosInstance.get('/api/books/mine', {
-          headers: { Authorization: `Bearer ${user.token}` },
-        });
-        setUserBooks(res.data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    fetchMyBooks();
-  }, [user]);
-
-  const handleInputChange = (bookId, field, value) => {
-    setFormData({
-      ...formData,
-      [bookId]: { ...formData[bookId], [field]: value },
-    });
-  };
-
-  const handleSwapRequest = async (book) => {
-    if (!user?.token) return alert('You must be logged in.');
-
-    const { offeredBookId, message } = formData[book._id] || {};
-
-    try {
-      const response = await axiosInstance.post(
-        '/api/swaps',
-        {
-          requestedBookId: book._id,
-          offeredBookId: offeredBookId || null,
-          message: message || '',
-        },
-        { headers: { Authorization: `Bearer ${user.token}` } }
-      );
-
-      alert('Swap request sent!');
-      // Update the book as unavailable
-      setBooks(books.map(b => (b._id === book._id ? { ...b, available: false } : b)));
-    } catch (error) {
-      alert(error.response?.data?.message || 'Failed to send swap request.');
-    }
-  };
-
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">📚 Book Gallery</h1>
-      {books.length === 0 ? (
-        <p className="text-gray-500">No books available for swap.</p>
-      ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {books.map((book) => (
-            <div key={book._id} className="bg-white p-4 shadow-md rounded">
-              <h2 className="text-xl font-semibold">{book.title}</h2>
-              <p className="text-gray-600">by {book.author}</p>
-              <p className="mt-2">{book.description}</p>
-              <p className="mt-1 text-sm text-gray-500">Condition: {book.condition}</p>
-              <p className="mt-1 text-sm text-gray-500">Owner: {book.ownerId?.name || 'Unknown'}</p>
+    <div className="container mx-auto px-6 py-10">
+      {/* Hero Section */}
+      <section className="text-center mb-12">
+        <h1 className="text-4xl md:text-5xl font-bold mb-4">📚 Welcome to BookSwap</h1>
+        <p className="text-lg md:text-xl text-gray-700">
+          Swap, share, and discover books with fellow readers. Find your next great read or exchange
+          books you no longer need. Safe, simple, and social!
+        </p>
+      </section>
 
-              {book.available ? (
-                <div className="mt-4 space-y-2">
-                  <select
-                    value={formData[book._id]?.offeredBookId || ''}
-                    onChange={(e) => handleInputChange(book._id, 'offeredBookId', e.target.value)}
-                    className="w-full p-2 border rounded"
-                  >
-                    <option value="">Offer one of your books (optional)</option>
-                    {userBooks.map((b) => (
-                      <option key={b._id} value={b._id}>
-                        {b.title}
-                      </option>
-                    ))}
-                  </select>
-
-                  <textarea
-                    value={formData[book._id]?.message || ''}
-                    onChange={(e) => handleInputChange(book._id, 'message', e.target.value)}
-                    placeholder="Optional message"
-                    className="w-full p-2 border rounded"
-                  />
-
-                  <button
-                    onClick={() => handleSwapRequest(book)}
-                    className="w-full bg-green-600 text-white px-3 py-2 rounded"
-                  >
-                    Send Swap Request
-                  </button>
+      {/* Books Gallery */}
+      <section>
+        <h2 className="text-2xl font-semibold mb-6">Available Books</h2>
+        {books.length === 0 ? (
+          <p className="text-gray-500">No books available at the moment.</p>
+        ) : (
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {books.map((book) => (
+              <div key={book._id} className="bg-white p-4 shadow-lg rounded flex flex-col justify-between">
+                <div>
+                  <h3 className="text-xl font-bold">{book.title}</h3>
+                  <p className="text-gray-600">by {book.author}</p>
+                  <p className="mt-2 text-gray-700">{book.description}</p>
+                  <p className="mt-1 text-sm text-gray-500">Condition: {book.condition}</p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Status: {book.available ? 'Available' : 'Unavailable'}
+                  </p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Owner: {book.ownerId?.name || 'Unknown'}
+                  </p>
                 </div>
-              ) : (
-                <span className="mt-4 inline-block px-3 py-2 rounded bg-gray-400 text-white">
-                  Unavailable
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+                {book.available && user?.token && (
+                  <button
+                    className="mt-4 bg-green-600 text-white p-2 rounded hover:bg-green-700"
+                    onClick={async () => {
+                      try {
+                        const res = await axiosInstance.post(
+                          `/api/books/${book._id}/request-swap`,
+                          {},
+                          { headers: { Authorization: `Bearer ${user.token}` } }
+                        );
+                        alert(res.data.message);
+                        setBooks(books.map((b) => (b._id === book._id ? { ...b, available: false } : b)));
+                      } catch (err) {
+                        alert(err.response?.data?.message || 'Failed to request swap');
+                      }
+                    }}
+                  >
+                    Request Swap
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 };
 
-export default BookGallery;
+export default LandingPage;

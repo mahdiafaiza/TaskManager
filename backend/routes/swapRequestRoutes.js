@@ -1,26 +1,23 @@
-// routes/swapRequestRoutes.js
 const express = require('express');
 const router = express.Router();
 const {
   createSwapRequest,
-  getSwapRequests,
+  getOwnerSwapRequests,
+  getRequesterSwapRequests,
   respondToSwapRequest,
-  completeSwap,
-} = require('./controllers/SwapRequestController');
-
-// Middleware to protect routes (assumes you have auth middleware)
+} = require('../controllers/SwapRequestController');
 const { protect } = require('../middleware/authMiddleware');
 
 // Create a new swap request
 router.post('/', protect, createSwapRequest);
 
-// Get all swap requests for logged-in user
-router.get('/', protect, getSwapRequests);
+// Get all swap requests for books owned by logged-in user
+router.get('/owner', protect, getOwnerSwapRequests);
 
-// Respond to a swap request (accept or reject)
-router.patch('/:id/respond', protect, respondToSwapRequest);
+// Get all swap requests made by the logged-in user (requester)
+router.get('/requester', protect, getRequesterSwapRequests);
 
-// Mark swap as completed
-router.patch('/:id/complete', protect, completeSwap);
+// Accept or reject a swap request (owner only)
+router.put('/:id/respond', protect, respondToSwapRequest);
 
 module.exports = router;
