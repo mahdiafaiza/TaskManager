@@ -28,7 +28,7 @@ const createSwapRequest = async (req, res) => {
   }
 };
 
-// Get all swap requests for books owned by logged-in user
+// Get all swap requests for books owned by logged-in user (owner)
 const getOwnerSwapRequests = async (req, res) => {
   try {
     const requests = await SwapRequest.find({ ownerId: req.user._id })
@@ -87,7 +87,6 @@ const respondToSwapRequest = async (req, res) => {
 
     await swapRequest.save();
 
-    // Include requester email when accepted
     const populatedRequest = await SwapRequest.findById(swapRequest._id)
       .populate('requesterId', 'name email')
       .populate('ownerId', 'name email')

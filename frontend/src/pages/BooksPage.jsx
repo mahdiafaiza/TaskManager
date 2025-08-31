@@ -13,6 +13,7 @@ const BooksPage = () => {
     condition: 'Good',
   });
   const [editingBook, setEditingBook] = useState(null);
+  const [swapInputs, setSwapInputs] = useState({}); // Track offered book & message per book
 
   // Fetch books
   useEffect(() => {
@@ -20,13 +21,11 @@ const BooksPage = () => {
 
     const fetchBooks = async () => {
       try {
-        // My books
         const resMine = await axiosInstance.get('/api/books/mine', {
           headers: { Authorization: `Bearer ${user.token}` },
         });
         setMyBooks(resMine.data);
 
-        // All other books
         const resAll = await axiosInstance.get('/api/books/all', {
           headers: { Authorization: `Bearer ${user.token}` },
         });
@@ -102,22 +101,32 @@ const BooksPage = () => {
     }
   };
 
-  // Request swap
-  const handleRequestSwap = async (bookId) => {
-    if (!window.confirm('Do you want to request a swap for this book?')) return;
+  // Swap input handlers
+  const handleSwapInputChange = (bookId, field, value) => {
+    setSwapInputs({
+      ...swapInputs,
+      [bookId]: { ...swapInputs[bookId], [field]: value },
+    });
+  };
+
+  const handleRequestSwapWithDetails = async (book) => {
+    const offeredBookId = swapInputs[book._id]?.offeredBookId || null;
+    const message = swapInputs[book._id]?.message || '';
+
+    if (!window.confirm(`Do you want to request a swap for "${book.title}"?`)) return;
 
     try {
-      const res = await axiosInstance.post(
+      await axiosInstance.post(
         '/api/swap-requests',
-        { requestedBookId: bookId },
+        { requestedBookId: book._id, offeredBookId, message },
         { headers: { Authorization: `Bearer ${user.token}` } }
       );
 
-      console.log('Swap request created:', res.data);
       alert('Swap request sent successfully!');
-
-      // Mark book unavailable in UI
-      setAllBooks(allBooks.map((b) => (b._id === bookId ? { ...b, available: false } : b)));
+      setAllBooks(allBooks.map((b) =>
+        b._id === book._id ? { ...b, available: false } : b
+      ));
+      setSwapInputs({ ...swapInputs, [book._id]: { offeredBookId: '', message: '' } });
     } catch (err) {
       console.error('Error requesting swap:', err);
       alert(err.response?.data?.message || 'Failed to request swap.');
@@ -230,13 +239,33 @@ const BooksPage = () => {
                     Status: {book.available ? 'Available' : 'Unavailable'}
                   </p>
                 </div>
+
                 {book.available && (
-                  <button
-                    className="mt-4 bg-green-600 text-white p-2 rounded hover:bg-green-700"
-                    onClick={() => handleRequestSwap(book._id)}
-                  >
-                    Request Swap
-                  </button>
+                  <div className="mt-4 space-y-2">
+                    <select
+                      value={swapInputs[book._id]?.offeredBookId || ''}
+                      onChange={(e) => handleSwapInputChange(book._id, 'offeredBookId', e.target.value)}
+                      className="w-full p-2 border rounded"
+                    >
+                      <option value="">-- Select your book to offer (optional) --</option>
+                      {myBooks.map((b) => (
+                        <option key={b._id} value={b._id}>{b.title} ({b.condition})</option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Message (optional)"
+                      value={swapInputs[book._id]?.message || ''}
+                      onChange={(e) => handleSwapInputChange(book._id, 'message', e.target.value)}
+                      className="w-full p-2 border rounded"
+                    />
+                    <button
+                      className="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700"
+                      onClick={() => handleRequestSwapWithDetails(book)}
+                    >
+                      Request Swap
+                    </button>
+                  </div>
                 )}
               </div>
             ))}

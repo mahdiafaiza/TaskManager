@@ -20,13 +20,13 @@ const Navbar = () => {
             <Link to="/" className="mr-4">Gallery</Link>
             <Link to="/books" className="mr-4">Books</Link>
             {/* ✅ New Requests link */}
-      <Link to="/swap-requests/owner" className="mr-4 px-4 text-white font-semibold">
+      <Link to="/swap-requests/owner" className="mr-4 text-white font-semibold hover:text-blue-400">
           Swap Requests
         </Link>
-        <Link to="/swap-requests/requester" className=" mr-4 px-4 text-white font-semibold">
-          My Swap Requests
+        <Link to="/swap-requests/requester" className=" mr-4 text-white font-semibold hover:text-blue-400">
+          My Requests
         </Link>
-            <Link to="/profile" className="mr-4 px-4 py-2 bg-blue-300 text-white font-semibold rounded-lg shadow hover:bg-blue-700 transition"><span>
+            <Link to="/profile" className="mr-4 px-4 py-2 bg-blue-700 text-white font-semibold rounded-lg shadow hover:bg-blue-500 transition">username:  <span>
           {user.name}
               </span></Link>
             <button

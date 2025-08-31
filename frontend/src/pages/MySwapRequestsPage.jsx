@@ -5,11 +5,15 @@ import { useAuth } from '../context/AuthContext';
 const MySwapRequestsPage = () => {
   const { user } = useAuth();
   const [myRequests, setMyRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Fetch all swap requests made by the logged-in user (requester)
   useEffect(() => {
     if (!user?.token) return;
 
-    const fetchMyRequests = async () => {
+    const fetchRequests = async () => {
+      setLoading(true);
       try {
         const res = await axiosInstance.get('/api/swap-requests/requester', {
           headers: { Authorization: `Bearer ${user.token}` },
@@ -17,12 +21,17 @@ const MySwapRequestsPage = () => {
         setMyRequests(res.data);
       } catch (err) {
         console.error('Error fetching my swap requests:', err);
-        alert('Failed to fetch your swap requests.');
+        setError(err.response?.data?.message || 'Failed to fetch your swap requests.');
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchMyRequests();
+    fetchRequests();
   }, [user]);
+
+  if (loading) return <p className="p-6">Loading requests...</p>;
+  if (error) return <p className="p-6 text-red-600">{error}</p>;
 
   return (
     <div className="container mx-auto p-6">
@@ -35,16 +44,14 @@ const MySwapRequestsPage = () => {
           {myRequests.map((req) => (
             <div key={req._id} className="bg-white p-4 shadow-md rounded flex flex-col justify-between">
               <div>
-                <h3 className="text-xl font-semibold">{req.requestedBookId?.title}</h3>
-                <p className="text-gray-600">by {req.requestedBookId?.author}</p>
-                <p className="mt-1 text-sm text-gray-500">Owner: {req.ownerId?.name}</p>
-                {req.status === 'accepted' && (
-                  <p className="mt-1 text-sm text-gray-700 font-semibold">
-                    Owner Email: {req.ownerId?.email}
-                  </p>
+                <h2 className="text-xl font-semibold">{req.requestedBookId?.title}</h2>
+                <p className="text-gray-600">Author: {req.requestedBookId?.author}</p>
+                <p className="text-gray-600">Owner: {req.ownerId?.name}</p>
+                {req.status === 'accepted' && req.ownerId?.email && (
+                  <p className="text-green-600">Owner Email: {req.ownerId.email}</p>
                 )}
-                <p className="mt-2 text-sm">Message: {req.message || 'No message'}</p>
                 <p className="mt-1 font-semibold">Status: {req.status}</p>
+                <p className="mt-1 text-sm text-gray-500">Message: {req.message || 'No message'}</p>
               </div>
             </div>
           ))}
